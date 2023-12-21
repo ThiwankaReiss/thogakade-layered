@@ -10,6 +10,7 @@ import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
+import db.DBConnection;
 import dto.CustomerDto;
 import dto.ItemDto;
 import dto.OrderDetailsDto;
@@ -26,6 +27,11 @@ import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.design.JRDesignQuery;
+import net.sf.jasperreports.engine.design.JasperDesign;
+import net.sf.jasperreports.engine.xml.JRXmlLoader;
+import net.sf.jasperreports.view.JasperViewer;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -91,6 +97,7 @@ public class OrderDetailsFormController {
         loadOrderIds();
 
         cmbOrderID.getSelectionModel().selectedItemProperty().addListener((ObservableValue,oldValue,orderId)->{
+
             for (OrderDto dto: orders) {
                 if(dto.getOrderId().equals(orderId)){
                     orderDto=dto;
@@ -143,5 +150,19 @@ public class OrderDetailsFormController {
     public void setCustomerName(String custId) throws SQLException, ClassNotFoundException {
         customerDto=customerBo.getCustomer(custId);
         custNameFillLabel.setText(customerDto.getName());
+    }
+
+    public void reportBtnOnAction(ActionEvent actionEvent) throws JRException, SQLException, ClassNotFoundException {
+        String orderId= cmbOrderID.getValue().toString();
+        JasperDesign design= JRXmlLoader.load("src/main/resources/reports/orderDetail.jrxml");
+
+        JRDesignQuery query=new JRDesignQuery();
+        query.setText("SELECT * FROM orderDetail WHERE orderId='"+orderId+"'");
+        design.setQuery(query);
+
+        JasperReport jasperReport= JasperCompileManager.compileReport(design);
+        JasperPrint jasperPrint= JasperFillManager.fillReport(jasperReport,null, DBConnection.getInstance().getConnection());
+        JasperViewer.viewReport(jasperPrint,false);
+
     }
 }
